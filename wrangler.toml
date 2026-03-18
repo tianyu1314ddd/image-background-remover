@@ -1,0 +1,13 @@
+name = "image-background-remover"
+compatibility_date = "2024-01-01"
+
+[env.production]
+pages_build_output_dir = ".next"
+account_id = "5028df5b5a30cfaa9740f9770cd87ded"
+[env.production.vars]
+REMOVE_BG_API_KEY = "9qJZKxQ9vuLRRUKUBSRktqMk"
+
+[env.preview]
+account_id = "5028df5b5a30cfaa9740f9770cd87ded"
+[env.preview.vars]
+REMOVE_BG_API_KEY = "9qJZKxQ9vuLRRUKUBSRktqMk"

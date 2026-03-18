@@ -94,8 +94,4 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+// API route config - bodyParser: false is handled automatically by Next.js
