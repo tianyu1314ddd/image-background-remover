@@ -21,11 +21,17 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: image-bg-remover
-          directory: projects/image-bg-remover-worker
+          directory: .next
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
