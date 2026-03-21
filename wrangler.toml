@@ -4,10 +4,20 @@ compatibility_date = "2024-01-01"
 [env.production]
 pages_build_output_dir = ".next"
 account_id = "5028df5b5a30cfaa9740f9770cd87ded"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_id = "05eba51a-c623-4606-bbfd-a51fce1e268f"
+
 [env.production.vars]
 REMOVE_BG_API_KEY = "9qJZKxQ9vuLRRUKUBSRktqMk"
 
 [env.preview]
 account_id = "5028df5b5a30cfaa9740f9770cd87ded"
+
+[[env.preview.d1_databases]]
+binding = "DB"
+database_id = "05eba51a-c623-4606-bbfd-a51fce1e268f"
+
 [env.preview.vars]
 REMOVE_BG_API_KEY = "9qJZKxQ9vuLRRUKUBSRktqMk"

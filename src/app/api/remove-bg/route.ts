@@ -4,6 +4,7 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const image = formData.get('image') as File;
+    const email = formData.get('email') as string | null;
     
     if (!image) {
       return NextResponse.json(
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const apiKey = process.env.REMOVE_BG_API_KEY;
+    const apiKey = '9qJZKxQ9vuLRRUKUBSRktqMk';
     
     if (!apiKey) {
       return NextResponse.json(
@@ -38,6 +39,10 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    // 记录用户使用（如果提供了 email）
+    // 注意：在生产环境中，应该通过 context.env.DB 访问 D1
+    // 这里暂时跳过，因为 Next.js App Router 在构建时无法直接访问 context.env
 
     // 转发到 Remove.bg API
     const buffer = Buffer.from(await image.arrayBuffer());
@@ -55,8 +60,6 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      
       if (response.status === 402 || response.status === 403) {
         return NextResponse.json(
           { success: false, error: '今日处理次数已达上限，请明天再试' },
@@ -93,5 +96,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-// API route config - bodyParser: false is handled automatically by Next.js
