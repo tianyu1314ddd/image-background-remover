@@ -32,10 +32,8 @@ export default function Home() {
       const userData: User = { email, name, token };
       setUser(userData);
       localStorage.setItem('user', JSON.stringify(userData));
-      // Clean URL
       window.history.replaceState({}, '', '/');
     } else {
-      // Check localStorage
       const stored = localStorage.getItem('user');
       if (stored) {
         try {
@@ -48,7 +46,6 @@ export default function Home() {
   }, []);
 
   const handleLogin = useCallback(() => {
-    // Redirect to Google OAuth
     const clientId = '404300094669-raplltqofch4kq0bco3hokten7plh0to.apps.googleusercontent.com';
     const redirectUri = encodeURIComponent('https://imagebackgroundsremover.shop/api/auth/callback');
     window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=openid%20email%20profile&access_type=offline`;
@@ -60,25 +57,21 @@ export default function Home() {
   }, []);
 
   const handleFileSelect = useCallback(async (file: File) => {
-    // 重置状态
     setError(null);
     setResultImage(null);
     
-    // 验证文件类型
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
       setError('请上传 JPG、PNG 或 WebP 格式的图片');
       return;
     }
 
-    // 验证文件大小
     const maxSize = 25 * 1024 * 1024;
     if (file.size > maxSize) {
       setError('图片大小不能超过 25MB');
       return;
     }
 
-    // 显示原图
     const reader = new FileReader();
     reader.onload = (e) => {
       setOriginalImage(e.target?.result as string);
@@ -86,13 +79,11 @@ export default function Home() {
     };
     reader.readAsDataURL(file);
 
-    // 调用 API
     setIsLoading(true);
     try {
       const formData = new FormData();
       formData.append('image', file);
       
-      // Add user email if logged in
       if (user) {
         formData.append('email', user.email);
       }
@@ -279,7 +270,6 @@ export default function Home() {
           </div>
         ) : (
           <div className="bg-white rounded-2xl shadow-lg p-6">
-            {/* Error Message */}
             {error && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-center">
                 {error}
@@ -292,7 +282,6 @@ export default function Home() {
               </div>
             )}
 
-            {/* Loading State */}
             {isLoading && (
               <div className="mb-6 text-center">
                 <div className="inline-flex items-center gap-3 px-6 py-3 bg-blue-50 rounded-lg">
@@ -302,10 +291,8 @@ export default function Home() {
               </div>
             )}
 
-            {/* Result Display */}
             {resultImage && !isLoading && (
               <>
-                {/* Background Toggle */}
                 <div className="flex justify-center gap-2 mb-6">
                   <button
                     onClick={() => setBackground('transparent')}
@@ -339,7 +326,6 @@ export default function Home() {
                   </button>
                 </div>
 
-                {/* Image Comparison */}
                 <div className="grid md:grid-cols-2 gap-6 mb-6">
                   <div>
                     <p className="text-sm text-gray-500 mb-2 text-center font-medium">原图</p>
@@ -370,7 +356,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Action Buttons */}
                 <div className="flex justify-center gap-4">
                   <button
                     onClick={handleDownload}
@@ -389,7 +374,6 @@ export default function Home() {
               </>
             )}
 
-            {/* Processing state - show original only */}
             {isLoading && !resultImage && (
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
