@@ -5,6 +5,10 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  // Fix Turbopack workspace root issue
+  turbopack: {
+    root: '.',
+  },
 };
 
 export default nextConfig;
