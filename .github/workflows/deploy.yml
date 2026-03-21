@@ -1,4 +1,4 @@
-name: Deploy to Cloudflare Pages
+name: Deploy to Cloudflare Workers
 
 on:
   push:
@@ -25,9 +25,10 @@ jobs:
         run: npm install
         working-directory: projects/image-bg-remover-worker
 
-      - name: Deploy to Cloudflare Pages
+      - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy projects/image-bg-remover-worker --project-name=image-bg-remover --branch=master
+          command: deploy
+          workingDirectory: projects/image-bg-remover-worker
