@@ -21,16 +21,10 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Dependencies
-        run: npm install
-        working-directory: projects/image-bg-remover-worker
-
-      - name: Install Wrangler
-        run: npm install -g wrangler
-        working-directory: projects/image-bg-remover-worker
-
-      - name: Deploy to Cloudflare Workers
-        run: wrangler deploy
+      - name: Install Dependencies and Deploy
+        run: |
+          npm install
+          npx wrangler deploy
         working-directory: projects/image-bg-remover-worker
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
