@@ -1,6 +1,10 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  // Next.js configuration
-}
+import type { NextConfig } from 'next';
 
-module.exports = nextConfig
+const nextConfig: NextConfig = {
+  // Cloudflare Pages configuration
+  images: {
+    unoptimized: true,
+  },
+};
+
+export default nextConfig;
