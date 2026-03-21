@@ -1,0 +1,15 @@
+name = "image-bg-remover-worker"
+main = "index.js"
+compatibility_date = "2024-01-01"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "image-bg-remover-users"
+database_id = "05eba51a-c623-4606-bbfd-a51fce1e268f"
+
+# Environment variables
+[vars]
+# Add your Google OAuth credentials if needed server-side
+# GOOGLE_CLIENT_ID = "404300094669-raplltqofch4kq0bco3hokten7plh0to.apps.googleusercontent.com"
+# GOOGLE_CLIENT_SECRET = "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"
