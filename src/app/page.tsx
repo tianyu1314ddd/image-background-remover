@@ -224,6 +224,12 @@ export default function Home() {
                     </span>
                   </div>
                   <button
+                    onClick={() => window.location.href = '/profile'}
+                    className="px-3 py-1.5 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+                  >
+                    个人中心
+                  </button>
+                  <button
                     onClick={handleLogout}
                     className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
                   >
