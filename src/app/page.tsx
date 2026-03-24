@@ -269,8 +269,8 @@ export default function Home() {
               ✓ 已登录为 {user.email}
             </p>
             <p className="text-xs text-gray-500">
-              剩余额度：{quota.credits > 0 ? `${quota.credits} 积分` : `${Math.max(0, quota.monthlyQuota - quota.monthlyUsage)}/${quota.monthlyQuota} 次月度免费`
-              </p>
+              剩余额度：{quota.credits > 0 ? `${quota.credits} 积分` : `${Math.max(0, quota.monthlyQuota - quota.monthlyUsage)}/${quota.monthlyQuota} 次月度免费`}
+            </p>
           </div>
         ) : (
           <p className="text-sm text-blue-600 mt-4">

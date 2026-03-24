@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { checkUserQuota, deductCredit } from '@/lib/db';
+import type { D1Database } from '@cloudflare/workers-types';
 
 export const runtime = 'edge';
 

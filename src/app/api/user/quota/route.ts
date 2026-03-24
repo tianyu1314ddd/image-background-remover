@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { D1Database } from '@cloudflare/workers-types';
 
 interface ParsedToken {
   email: string;
