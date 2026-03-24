@@ -25,6 +25,7 @@ jobs:
         run: npm run build
         env:
           REMOVE_BG_API_KEY: ${{ secrets.REMOVE_BG_API_KEY }}
+          NODE_ENV: production
 
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
