@@ -8,7 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -18,8 +18,13 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Configure npm
+        run: |
+          npm config set fetch-retry-mintimeout 20000
+          npm config set fetch-retry-maxtimeout 120000
+
       - name: Install dependencies
-        run: npm install
+        run: npm install --prefer-offline --no-audit --progress=false
 
       - name: Build
         run: npm run build
