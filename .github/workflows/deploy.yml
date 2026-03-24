@@ -18,16 +18,14 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Configure npm
-        run: |
-          npm config set fetch-retry-mintimeout 20000
-          npm config set fetch-retry-maxtimeout 120000
+      - name: Install pnpm
+        run: npm install -g pnpm
 
       - name: Install dependencies
-        run: npm install --prefer-offline --no-audit --progress=false
+        run: pnpm install --prefer-offline
 
       - name: Build
-        run: npm run build
+        run: pnpm build
         env:
           REMOVE_BG_API_KEY: ${{ secrets.REMOVE_BG_API_KEY }}
 
