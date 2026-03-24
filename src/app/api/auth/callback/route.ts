@@ -1,6 +1,12 @@
 import { NextRequest } from 'next/server';
+import { createUser, getUserByEmail, updateLastLogin } from '@/lib/db';
+
+export const runtime = 'edge';
 
 export async function GET(request: NextRequest) {
+  const env = process.env as { DB?: D1Database } & { [key: string]: unknown };
+  const db = env as { DB?: D1Database } & { [key: string]: unknown };
+  
   const url = new URL(request.url);
   
   // If no code, redirect to login
@@ -55,7 +61,21 @@ export async function GET(request: NextRequest) {
 
   const userInfo = await userInfoResponse.json();
 
-  // Create a simple session token
+  // Check if user exists in DB, if not create with registration bonus
+  if (db.DB) {
+    const existingUser = await getUserByEmail(db.DB, userInfo.email);
+    
+    if (!existingUser) {
+      // New user - create with registration bonus (3 credits)
+      const userId = crypto.randomUUID();
+      await createUser(db.DB, userId, userInfo.email, userInfo.name, userInfo.picture);
+    } else {
+      // Existing user - update last login
+      await updateLastLogin(db.DB, userInfo.email);
+    }
+  }
+
+  // Create a simple session token (in production, use proper JWT or secure session)
   const sessionToken = btoa(JSON.stringify({
     email: userInfo.email,
     name: userInfo.name,
@@ -65,7 +85,7 @@ export async function GET(request: NextRequest) {
   // Redirect back to home with token
   const redirectUrl = new URL('https://imagebackgroundsremover.shop');
   redirectUrl.searchParams.set('token', sessionToken);
-  redirectUrl.searchParams.set('name', userInfo.name);
+  redirectUrl.searchParams.set('name', userInfo.name || 'User');
   redirectUrl.searchParams.set('email', userInfo.email);
 
   return Response.redirect(redirectUrl.toString(), 302);

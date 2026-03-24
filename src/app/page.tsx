@@ -11,6 +11,12 @@ interface User {
   token: string;
 }
 
+interface QuotaInfo {
+  credits: number;
+  monthlyUsage: number;
+  monthlyQuota: number;
+}
+
 export default function Home() {
   const [originalImage, setOriginalImage] = useState<string | null>(null);
   const [originalFileName, setOriginalFileName] = useState<string>('');
@@ -20,6 +26,7 @@ export default function Home() {
   const [background, setBackground] = useState<BackgroundType>('transparent');
   const [isDragging, setIsDragging] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [quota, setQuota] = useState<QuotaInfo>({ credits: 0, monthlyUsage: 0, monthlyQuota: 5 });
 
   // Check for auth token on mount
   useEffect(() => {
@@ -80,12 +87,13 @@ export default function Home() {
     reader.readAsDataURL(file);
 
     setIsLoading(true);
+    setError(null);
     try {
       const formData = new FormData();
       formData.append('image', file);
       
       if (user) {
-        formData.append('email', user.email);
+        formData.append('token', user.token);
       }
 
       const response = await fetch('/api/remove-bg', {
@@ -96,17 +104,36 @@ export default function Home() {
       const data = await response.json();
 
       if (!data.success) {
+        if (data.code === 'NOT_LOGGED_IN' || data.code === 'TOKEN_EXPIRED') {
+          setError('请先登录后再使用');
+          setUser(null);
+          localStorage.removeItem('user');
+          return;
+        }
+        if (data.code === 'QUOTA_EXCEEDED') {
+          setError(`额度已用完！今日免费额度 (${quota.monthlyQuota}次) 已用尽，请明天再来或购买积分包`);
+          return;
+        }
         setError(data.error || '处理失败，请稍后重试');
         return;
       }
 
       setResultImage(data.imageBase64);
+      
+      // 更新额度信息
+      if (data.remainingCredits !== undefined || data.remainingMonthly !== undefined) {
+        setQuota(prev => ({
+          ...prev,
+          credits: data.remainingCredits ?? prev.credits,
+          monthlyUsage: prev.monthlyQuota - (data.remainingMonthly ?? prev.monthlyQuota - 1)
+        }));
+      }
     } catch (err) {
       setError('网络错误，请检查连接后重试');
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, quota]);
 
   const handleDrop = useCallback((e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -190,9 +217,12 @@ export default function Home() {
             <div>
               {user ? (
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600">
-                    👋 {user.name}
-                  </span>
+                  <div className="text-sm text-gray-600 flex items-center gap-2">
+                    <span>👋 {user.name}</span>
+                    <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs">
+                      积分: {quota.credits} | 月度: {Math.max(0, quota.monthlyQuota - quota.monthlyUsage)}/{quota.monthlyQuota}
+                    </span>
+                  </div>
                   <button
                     onClick={handleLogout}
                     className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
@@ -225,11 +255,20 @@ export default function Home() {
           Remove Image Background <span className="text-blue-600">Free</span>
         </h1>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          上传图片，自动去除背景。支持 JPG、PNG、WebP 格式，无需注册，完全免费。
+          上传图片，自动去除背景。支持 JPG、PNG、WebP 格式。
         </p>
-        {user && (
-          <p className="text-sm text-green-600 mt-2">
-            ✓ 已登录为 {user.email}
+        {user ? (
+          <div className="mt-4 flex items-center justify-center gap-4">
+            <p className="text-sm text-green-600">
+              ✓ 已登录为 {user.email}
+            </p>
+            <p className="text-xs text-gray-500">
+              剩余额度：{quota.credits > 0 ? `${quota.credits} 积分` : `${Math.max(0, quota.monthlyQuota - quota.monthlyUsage)}/${quota.monthlyQuota} 次月度免费`
+              </p>
+          </div>
+        ) : (
+          <p className="text-sm text-blue-600 mt-4">
+            🎁 注册即送 3 次免费额度！登录即可使用
           </p>
         )}
       </section>
