@@ -27,6 +27,7 @@ jobs:
       - name: Install Wrangler
         run: npm install -g wrangler
 
+      # Build step with PayPal env vars injected at build time
       - name: Build
         run: pnpm build
         env:
