@@ -41,18 +41,23 @@ export default function PayPalButton({
 
   // Load PayPal SDK once
   useEffect(() => {
+    console.log('[PayPalButton] Mounting, clientId:', clientId ? `${clientId.slice(0, 10)}...` : 'EMPTY/MISSING');
+    
     if (!clientId) {
+      console.error('[PayPalButton] Client ID is empty!');
       setStatus('error');
-      setErrorMsg('PayPal Client ID not configured');
+      setErrorMsg('PayPal Client ID not configured - build env var missing');
       return;
     }
 
     // Already loaded
     if (window.paypal) {
+      console.log('[PayPalButton] SDK already loaded');
       setStatus('ready');
       return;
     }
 
+    console.log('[PayPalButton] Loading PayPal SDK...');
     setStatus('loading');
 
     const script = document.createElement('script');

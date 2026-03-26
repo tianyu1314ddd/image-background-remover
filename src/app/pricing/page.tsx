@@ -244,6 +244,10 @@ export default function PricingPage() {
   const [selectedTier, setSelectedTier] = useState<PricingTier | null>(null);
   const [successData, setSuccessData] = useState<{transactionId: string; packageName: string} | null>(null);
 
+  // Debug: Check PayPal configuration
+  const paypalClientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
+  const isPaypalConfigured = !!paypalClientId;
+
   const handlePurchase = (tier: PricingTier) => {
     if (tier.isFree) return;
     setSelectedTier(tier);
@@ -292,6 +296,13 @@ export default function PricingPage() {
           </div>
         </div>
       </header>
+
+      {/* Debug Banner */}
+      <div className={`py-2 text-center text-sm font-mono ${isPaypalConfigured ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+        {isPaypalConfigured 
+          ? `✓ PayPal 配置正确 (Client ID: ${paypalClientId?.slice(0, 10)}...)` 
+          : '✗ PayPal 未配置 (NEXT_PUBLIC_PAYPAL_CLIENT_ID 为空)'}
+      </div>
 
       {/* Pricing Content */}
       <section className="max-w-6xl mx-auto px-4 py-12">
