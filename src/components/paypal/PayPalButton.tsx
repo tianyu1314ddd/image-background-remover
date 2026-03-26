@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { cnyToUsd } from '@/lib/paypal';
 
 declare global {
@@ -34,10 +34,13 @@ export default function PayPalButton({
   onCancel,
   disabled = false,
 }: PayPalButtonProps) {
-  const containerId = `paypal-button-container-${packageType}-${Date.now()}`;
+  // Use React useId for stable ID that won't change between renders
+  const reactId = useId();
+  const containerId = `paypal-button-${reactId.replace(/:/g, '')}`;
   const [isLoading, setIsLoading] = useState(false);
   const [sdkReady, setSdkReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [buttonsRendered, setButtonsRendered] = useState(false);
 
   const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '';
   const rate = 0.14; // CNY to USD rate
@@ -77,80 +80,93 @@ export default function PayPalButton({
 
   // Render PayPal buttons when SDK is ready
   useEffect(() => {
-    if (!sdkReady || !window.paypal || disabled) {
+    if (!sdkReady || !window.paypal || disabled || buttonsRendered) {
       return;
     }
 
-    window.paypal
-      .Buttons({
-        style: {
-          layout: 'vertical',
-          color: 'blue',
-          shape: 'rect',
-          label: 'pay',
-        },
-        createOrder: async (data: any, actions: any) => {
-          setIsLoading(true);
-          try {
-            // Call backend to create order
-            const response = await fetch('/api/paypal/create-order', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                packageType,
-                userId: 'current-user', // TODO: Get from auth context
-                userEmail: 'user@example.com', // TODO: Get from auth context
-              }),
-            });
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      const container = document.getElementById(containerId);
+      if (!container) return;
 
-            if (!response.ok) {
-              throw new Error('Failed to create order');
+      // Clear any existing content
+      container.innerHTML = '';
+
+      window.paypal
+        ?.Buttons({
+          style: {
+            layout: 'vertical',
+            color: 'blue',
+            shape: 'rect',
+            label: 'pay',
+          },
+          createOrder: async (data: any, actions: any) => {
+            setIsLoading(true);
+            try {
+              // Call backend to create order
+              const response = await fetch('/api/paypal/create-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  packageType,
+                  userId: 'current-user', // TODO: Get from auth context
+                  userEmail: 'user@example.com', // TODO: Get from auth context
+                }),
+              });
+
+              if (!response.ok) {
+                throw new Error('Failed to create order');
+              }
+
+              const { orderId } = await response.json();
+              return orderId;
+            } catch (err) {
+              setError('Failed to create order');
+              throw err;
+            } finally {
+              setIsLoading(false);
             }
+          },
+          onApprove: async (data: any, actions: any) => {
+            try {
+              // Capture the order
+              const response = await fetch('/api/paypal/capture-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ orderId: data.orderID }),
+              });
 
-            const { orderId } = await response.json();
-            return orderId;
-          } catch (err) {
-            setError('Failed to create order');
-            throw err;
-          } finally {
-            setIsLoading(false);
-          }
-        },
-        onApprove: async (data: any, actions: any) => {
-          try {
-            // Capture the order
-            const response = await fetch('/api/paypal/capture-order', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ orderId: data.orderID }),
-            });
+              if (!response.ok) {
+                throw new Error('Failed to capture order');
+              }
 
-            if (!response.ok) {
-              throw new Error('Failed to capture order');
+              const result = await response.json();
+
+              if (result.success) {
+                onSuccess?.(result.transactionId || data.orderID);
+              } else {
+                throw new Error('Payment was not completed');
+              }
+            } catch (err) {
+              onError?.(err instanceof Error ? err.message : 'Payment failed');
             }
+          },
+          onCancel: () => {
+            onCancel?.();
+          },
+          onError: (err: any) => {
+            console.error('PayPal button error:', err);
+            onError?.('Payment failed');
+          },
+        })
+        .render(`#${containerId}`);
 
-            const result = await response.json();
+      setButtonsRendered(true);
+    }, 100);
 
-            if (result.success) {
-              onSuccess?.(result.transactionId || data.orderID);
-            } else {
-              throw new Error('Payment was not completed');
-            }
-          } catch (err) {
-            onError?.(err instanceof Error ? err.message : 'Payment failed');
-          }
-        },
-        onCancel: () => {
-          onCancel?.();
-        },
-        onError: (err: any) => {
-          console.error('PayPal button error:', err);
-          onError?.('Payment failed');
-        },
-      })
-      .render(`#${containerId}`);
+    return () => clearTimeout(timer);
 
-  }, [sdkReady, disabled, packageType, onSuccess, onError, onCancel, amountUSD, containerId]);
+  }, [sdkReady, disabled, packageType, onSuccess, onError, onCancel, amountUSD, containerId, buttonsRendered]);
 
   if (disabled) {
     return (
