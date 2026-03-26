@@ -27,7 +27,7 @@ jobs:
       - name: Install Wrangler
         run: npm install -g wrangler
 
-      # Build step - PayPal secrets now injected at build time
+      # Build step - PayPal secrets properly injected
       - name: Build
         run: pnpm build
         env:
