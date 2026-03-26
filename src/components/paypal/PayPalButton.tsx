@@ -1,19 +1,18 @@
 'use client';
 
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { cnyToUsd } from '@/lib/paypal';
 
 declare global {
   interface Window {
     paypal?: {
-      Buttons: (config: any) => { render: (selector: string) => void };
+      Buttons: (config: Record<string, unknown>) => { render: (selector: string) => void };
     };
   }
 }
 
 interface PayPalButtonProps {
-  amount: number; // Price in CNY
-  currency?: string;
+  amount: number;
   packageType: string;
   packageName: string;
   credits: number;
@@ -25,7 +24,6 @@ interface PayPalButtonProps {
 
 export default function PayPalButton({
   amount,
-  currency = 'CNY',
   packageType,
   packageName,
   credits,
@@ -34,185 +32,149 @@ export default function PayPalButton({
   onCancel,
   disabled = false,
 }: PayPalButtonProps) {
-  // Use React useId for stable ID that won't change between renders
-  const reactId = useId();
-  const containerId = `paypal-button-${reactId.replace(/:/g, '')}`;
-  const [isLoading, setIsLoading] = useState(false);
-  const [sdkReady, setSdkReady] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [buttonsRendered, setButtonsRendered] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [containerId] = useState(() => `paypal-btn-${packageType}-${Math.random().toString(36).slice(2, 9)}`);
 
-  const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '';
-  const rate = 0.14; // CNY to USD rate
-  const amountUSD = cnyToUsd(amount, rate);
+  const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
+  const amountUSD = cnyToUsd(amount, 0.14);
 
-  // Load PayPal SDK
+  // Load PayPal SDK once
   useEffect(() => {
     if (!clientId) {
-      setError('PayPal not configured');
+      setStatus('error');
+      setErrorMsg('PayPal Client ID not configured');
       return;
     }
 
-    // Check if SDK already loaded
+    // Already loaded
     if (window.paypal) {
-      setSdkReady(true);
+      setStatus('ready');
       return;
     }
+
+    setStatus('loading');
 
     const script = document.createElement('script');
     script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD&intent=capture`;
     script.async = true;
-
     script.onload = () => {
-      setSdkReady(true);
+      setStatus('ready');
     };
-
     script.onerror = () => {
-      setError('Failed to load PayPal SDK');
+      setStatus('error');
+      setErrorMsg('Failed to load PayPal SDK');
     };
-
     document.body.appendChild(script);
-
-    return () => {
-      // Cleanup not needed for SDK script
-    };
   }, [clientId]);
 
-  // Render PayPal buttons when SDK is ready
+  // Render buttons when SDK is ready
   useEffect(() => {
-    if (!sdkReady || !window.paypal || disabled || buttonsRendered) {
-      return;
-    }
+    if (status !== 'ready' || disabled) return;
 
-    // Small delay to ensure DOM is ready
-    const timer = setTimeout(() => {
-      const container = document.getElementById(containerId);
-      if (!container) return;
+    const container = document.getElementById(containerId);
+    if (!container) return;
 
-      // Clear any existing content
-      container.innerHTML = '';
+    // Small delay to ensure container is in DOM
+    const timeout = setTimeout(() => {
+      try {
+        const paypalWindow = window.paypal;
+        if (!paypalWindow) {
+          setStatus('error');
+          setErrorMsg('PayPal SDK not available');
+          return;
+        }
 
-      window.paypal
-        ?.Buttons({
-          style: {
-            layout: 'vertical',
-            color: 'blue',
-            shape: 'rect',
-            label: 'pay',
-          },
-          createOrder: async (data: any, actions: any) => {
-            setIsLoading(true);
-            try {
-              // Call backend to create order
-              const response = await fetch('/api/paypal/create-order', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  packageType,
-                  userId: 'current-user', // TODO: Get from auth context
-                  userEmail: 'user@example.com', // TODO: Get from auth context
-                }),
+        paypalWindow
+          .Buttons({
+            style: {
+              layout: 'vertical',
+              color: 'blue',
+              shape: 'rect',
+              label: 'pay',
+            },
+            createOrder: (_data: unknown, actions: { order: { create: (config: Record<string, unknown>) => Promise<string> } }) => {
+              return actions.order.create({
+                purchase_units: [
+                  {
+                    description: `${packageName} - ${credits} Credits`,
+                    amount: {
+                      currency_code: 'USD',
+                      value: amountUSD.toFixed(2),
+                    },
+                  },
+                ],
               });
-
-              if (!response.ok) {
-                throw new Error('Failed to create order');
+            },
+            onApprove: async (_data: { orderID: string }, actions: { order: { capture: () => Promise<Record<string, unknown>> } }) => {
+              try {
+                const result = await actions.order.capture();
+                const purchaseUnits = result.purchase_units as Array<{ payments?: { captures?: Array<{ id: string }> } }>;
+                const transactionId = purchaseUnits?.[0]?.payments?.captures?.[0]?.id || '';
+                onSuccess?.(transactionId);
+              } catch {
+                onError?.('Payment capture failed');
               }
+            },
+            onCancel: () => {
+              onCancel?.();
+            },
+            onError: (err: unknown) => {
+              console.error('PayPal error:', err);
+              onError?.('Payment failed');
+            },
+          })
+          .render(`#${containerId}`);
+      } catch (err) {
+        console.error('PayPal render error:', err);
+        setStatus('error');
+        setErrorMsg('Failed to render PayPal button');
+      }
+    }, 50);
 
-              const { orderId } = await response.json();
-              return orderId;
-            } catch (err) {
-              setError('Failed to create order');
-              throw err;
-            } finally {
-              setIsLoading(false);
-            }
-          },
-          onApprove: async (data: any, actions: any) => {
-            try {
-              // Capture the order
-              const response = await fetch('/api/paypal/capture-order', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ orderId: data.orderID }),
-              });
-
-              if (!response.ok) {
-                throw new Error('Failed to capture order');
-              }
-
-              const result = await response.json();
-
-              if (result.success) {
-                onSuccess?.(result.transactionId || data.orderID);
-              } else {
-                throw new Error('Payment was not completed');
-              }
-            } catch (err) {
-              onError?.(err instanceof Error ? err.message : 'Payment failed');
-            }
-          },
-          onCancel: () => {
-            onCancel?.();
-          },
-          onError: (err: any) => {
-            console.error('PayPal button error:', err);
-            onError?.('Payment failed');
-          },
-        })
-        .render(`#${containerId}`);
-
-      setButtonsRendered(true);
-    }, 100);
-
-    return () => clearTimeout(timer);
-
-  }, [sdkReady, disabled, packageType, onSuccess, onError, onCancel, amountUSD, containerId, buttonsRendered]);
+    return () => clearTimeout(timeout);
+  }, [status, disabled, containerId, packageName, credits, amountUSD, onSuccess, onError, onCancel]);
 
   if (disabled) {
     return (
-      <button
-        disabled
-        className="w-full py-3 rounded-lg font-medium bg-gray-300 text-gray-500 cursor-not-allowed"
-      >
+      <button disabled className="w-full py-3 rounded-lg font-medium bg-gray-300 text-gray-500 cursor-not-allowed">
         即将推出
       </button>
     );
   }
 
-  if (error) {
+  if (status === 'error') {
     return (
       <div className="w-full">
-        <div className="text-red-500 text-sm mb-2">{error}</div>
-        <button
-          disabled
-          className="w-full py-3 rounded-lg font-medium bg-gray-300 text-gray-500 cursor-not-allowed"
-        >
+        {errorMsg && (
+          <div className="text-red-500 text-xs mb-2 text-center">{errorMsg}</div>
+        )}
+        <button disabled className="w-full py-3 rounded-lg font-medium bg-gray-300 text-gray-500 cursor-not-allowed">
           PayPal 暂不可用
         </button>
       </div>
     );
   }
 
+  if (status === 'loading') {
+    return (
+      <div className="w-full">
+        <div className="text-center mb-3 text-sm text-gray-500">
+          ¥{amount} ≈ ${amountUSD.toFixed(2)} USD
+        </div>
+        <div className="h-[44px] flex items-center justify-center bg-gray-100 rounded-lg">
+          <span className="text-gray-500 text-sm">加载 PayPal...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full">
-      {/* Price display */}
-      <div className="text-center mb-3">
-        <span className="text-gray-600 text-sm">
-          ¥{amount} ≈ ${amountUSD.toFixed(2)} USD
-        </span>
+      <div className="text-center mb-3 text-sm text-gray-600">
+        ¥{amount} ≈ ${amountUSD.toFixed(2)} USD
       </div>
-
-      {/* PayPal buttons container */}
-      <div 
-        id={containerId}
-        className={`min-h-[44px] ${isLoading ? 'opacity-50' : ''}`} 
-      />
-
-      {isLoading && (
-        <div className="text-center text-sm text-gray-500 mt-2">
-          处理中...
-        </div>
-      )}
+      <div id={containerId} className="min-h-[44px]" />
     </div>
   );
 }
