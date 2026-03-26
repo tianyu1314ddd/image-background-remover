@@ -136,6 +136,18 @@ export async function deductCredit(db: D1Database, email: string): Promise<boole
   return true;
 }
 
+// 添加积分
+export async function addCredits(db: D1Database, email: string, credits: number): Promise<boolean> {
+  const user = await getUserByEmail(db, email);
+  if (!user) return false;
+
+  await db
+    .prepare('UPDATE users SET credits = credits + ? WHERE email = ?')
+    .bind(credits, email)
+    .run();
+  return true;
+}
+
 // 获取用户额度信息
 export async function getUserQuotaInfo(db: D1Database, email: string): Promise<{
   credits: number;
