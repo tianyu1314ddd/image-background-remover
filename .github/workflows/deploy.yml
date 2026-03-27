@@ -29,19 +29,26 @@ jobs:
       - name: Install Wrangler
         run: npm install -g wrangler
 
-      - name: Clean build artifacts
+      - name: Create env file
         run: |
           rm -rf .next .open-next
-          echo "Cleaned build artifacts"
+          cat > .env.production << 'ENVEOF'
+NEXT_PUBLIC_PAYPAL_CLIENT_ID=${{ secrets.NEXT_PUBLIC_PAYPAL_CLIENT_ID }}
+PAYPAL_CLIENT_SECRET=${{ secrets.PAYPAL_CLIENT_SECRET }}
+PAYPAL_MODE=${{ secrets.PAYPAL_MODE }}
+CNY_TO_USD_RATE=${{ secrets.CNY_TO_USD_RATE }}
+REMOVE_BG_API_KEY=${{ secrets.REMOVE_BG_API_KEY }}
+ENVEOF
+          echo "Created .env.production"
 
       - name: Build
         run: pnpm build
         env:
-          REMOVE_BG_API_KEY: ${{ secrets.REMOVE_BG_API_KEY }}
           NEXT_PUBLIC_PAYPAL_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_PAYPAL_CLIENT_ID }}
           PAYPAL_CLIENT_SECRET: ${{ secrets.PAYPAL_CLIENT_SECRET }}
           PAYPAL_MODE: ${{ secrets.PAYPAL_MODE }}
           CNY_TO_USD_RATE: ${{ secrets.CNY_TO_USD_RATE }}
+          REMOVE_BG_API_KEY: ${{ secrets.REMOVE_BG_API_KEY }}
 
       - name: Build OpenNext for Cloudflare
         run: npx @opennextjs/cloudflare build
