@@ -29,17 +29,18 @@ jobs:
       - name: Install Wrangler
         run: npm install -g wrangler
 
-      - name: Create env file
+      - name: Clean and prepare
         run: |
           rm -rf .next .open-next
-          cat > .env.production << 'ENVEOF'
-NEXT_PUBLIC_PAYPAL_CLIENT_ID=${{ secrets.NEXT_PUBLIC_PAYPAL_CLIENT_ID }}
-PAYPAL_CLIENT_SECRET=${{ secrets.PAYPAL_CLIENT_SECRET }}
-PAYPAL_MODE=${{ secrets.PAYPAL_MODE }}
-CNY_TO_USD_RATE=${{ secrets.CNY_TO_USD_RATE }}
-REMOVE_BG_API_KEY=${{ secrets.REMOVE_BG_API_KEY }}
-ENVEOF
-          echo "Created .env.production"
+
+      - name: Create env file
+        run: |
+          echo "NEXT_PUBLIC_PAYPAL_CLIENT_ID=${{ secrets.NEXT_PUBLIC_PAYPAL_CLIENT_ID }}" > .env.production
+          echo "PAYPAL_CLIENT_SECRET=${{ secrets.PAYPAL_CLIENT_SECRET }}" >> .env.production
+          echo "PAYPAL_MODE=${{ secrets.PAYPAL_MODE }}" >> .env.production
+          echo "CNY_TO_USD_RATE=${{ secrets.CNY_TO_USD_RATE }}" >> .env.production
+          echo "REMOVE_BG_API_KEY=${{ secrets.REMOVE_BG_API_KEY }}" >> .env.production
+          cat .env.production
 
       - name: Build
         run: pnpm build
