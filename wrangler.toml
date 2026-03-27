@@ -1,0 +1,7 @@
+name = "imagebackgroundremover"
+compatibility_date = "2026-03-23"
+pages_build_output_dir = ".open-next"
+
+[[d1_databases]]
+binding = "DB"
+database_id = "05eba51a-c623-4606-bbfd-a51fce1e268f"
