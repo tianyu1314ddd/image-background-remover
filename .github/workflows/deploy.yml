@@ -29,6 +29,11 @@ jobs:
       - name: Install Wrangler
         run: npm install -g wrangler
 
+      - name: Clean build artifacts
+        run: |
+          rm -rf .next .open-next
+          echo "Cleaned build artifacts"
+
       - name: Build
         run: pnpm build
         env:
