@@ -35,11 +35,22 @@ export default function Home() {
     const name = urlParams.get('name');
     const email = urlParams.get('email');
 
-    if (token && name && email) {
-      const userData: User = { email, name, token };
-      setUser(userData);
-      localStorage.setItem('user', JSON.stringify(userData));
-      window.history.replaceState({}, '', '/');
+    if (token && (name || email)) {
+      // Decode token to get user info if name/email not provided
+      try {
+        const decoded = JSON.parse(atob(token));
+        const userData: User = {
+          email: email || decoded.email,
+          name: name || decoded.name,
+          token: token
+        };
+        setUser(userData);
+        localStorage.setItem('user', JSON.stringify(userData));
+        window.history.replaceState({}, '', '/');
+      } catch {
+        // Invalid token, clear it
+        window.history.replaceState({}, '', '/');
+      }
     } else {
       const stored = localStorage.getItem('user');
       if (stored) {
