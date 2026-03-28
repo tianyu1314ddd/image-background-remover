@@ -79,21 +79,27 @@ export async function GET(request: NextRequest) {
     }
 
     // Create or update user in D1
-    if (db) {
-      const existingUser = await getUserByEmail(db, userInfo.email);
-      if (existingUser) {
-        await updateLastLogin(db, userInfo.email);
-      } else {
-        await createUser(db, crypto.randomUUID(), userInfo.email, userInfo.name || 'User', userInfo.picture || null);
+    if (db && userInfo.email) {
+      try {
+        const existingUser = await getUserByEmail(db, userInfo.email);
+        if (existingUser) {
+          await updateLastLogin(db, userInfo.email);
+        } else {
+          await createUser(db, crypto.randomUUID(), userInfo.email, userInfo.name || 'User', userInfo.picture || null);
+        }
+      } catch (dbError) {
+        console.error('Database error (non-fatal):', dbError);
+        // Continue anyway - user info is more important
       }
     }
 
     // Create session token
-    const sessionToken = btoa(JSON.stringify({
+    const sessionData = {
       email: userInfo.email,
       name: userInfo.name || 'User',
       exp: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days
-    }));
+    };
+    const sessionToken = btoa(JSON.stringify(sessionData));
 
     // Redirect to home with token
     const redirectUrl = new URL(url.origin);
@@ -104,6 +110,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Auth callback error:', error);
     const url = new URL(request.url);
-    return NextResponse.redirect(`${url.origin}/?error=${encodeURIComponent('服务器内部错误')}`);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return NextResponse.redirect(`${url.origin}/?error=${encodeURIComponent('服务器错误: ' + errorMessage)}`);
   }
 }
