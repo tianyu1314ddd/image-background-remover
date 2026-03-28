@@ -4,8 +4,8 @@ import type { D1Database } from '@cloudflare/workers-types';
 
 export async function GET(request: NextRequest) {
   try {
-    const env = process.env as { DB?: D1Database } & { [key: string]: unknown };
-    const db = env as { DB?: D1Database } & { [key: string]: unknown };
+    const env = process.env as { DB?: D1Database };
+    const db = env.DB;
     
     const url = new URL(request.url);
     const code = url.searchParams.get('code');
