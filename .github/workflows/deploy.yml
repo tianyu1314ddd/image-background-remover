@@ -40,6 +40,10 @@ jobs:
           echo "PAYPAL_MODE=${{ secrets.PAYPAL_MODE }}" >> .env.production
           echo "CNY_TO_USD_RATE=${{ secrets.CNY_TO_USD_RATE }}" >> .env.production
           echo "REMOVE_BG_API_KEY=${{ secrets.REMOVE_BG_API_KEY }}" >> .env.production
+          echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env.production
+          echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env.production
+          echo "NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}" >> .env.production
+          echo "NEXTAUTH_URL=https://image-bg-remover.tiankong259.workers.dev" >> .env.production
           cat .env.production
 
       - name: Build
@@ -50,6 +54,10 @@ jobs:
           PAYPAL_MODE: ${{ secrets.PAYPAL_MODE }}
           CNY_TO_USD_RATE: ${{ secrets.CNY_TO_USD_RATE }}
           REMOVE_BG_API_KEY: ${{ secrets.REMOVE_BG_API_KEY }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          NEXTAUTH_URL: https://image-bg-remover.tiankong259.workers.dev
 
       - name: Build OpenNext for Cloudflare
         run: npx @opennextjs/cloudflare build
