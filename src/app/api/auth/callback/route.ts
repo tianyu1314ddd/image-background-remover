@@ -39,28 +39,45 @@ export async function GET(request: NextRequest) {
     body: tokenParams.toString(),
   });
 
-  if (!tokenResponse.ok) {
-    return new Response(JSON.stringify({ error: 'Failed to get access token' }), {
+  let tokens;
+  try {
+    tokens = await tokenResponse.json();
+  } catch (e) {
+    const text = await tokenResponse.text();
+    return new Response(JSON.stringify({ error: 'Token exchange failed', details: text }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
   }
 
-  const tokens = await tokenResponse.json();
+  if (!tokenResponse.ok) {
+    return new Response(JSON.stringify({ error: 'Failed to get access token', details: tokens }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
   // Get user info
   const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
     headers: { Authorization: `Bearer ${tokens.access_token}` },
   });
 
-  if (!userInfoResponse.ok) {
-    return new Response(JSON.stringify({ error: 'Failed to get user info' }), {
+  let userInfo;
+  try {
+    userInfo = await userInfoResponse.json();
+  } catch (e) {
+    return new Response(JSON.stringify({ error: 'Failed to parse user info' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
   }
 
-  const userInfo = await userInfoResponse.json();
+  if (!userInfoResponse.ok) {
+    return new Response(JSON.stringify({ error: 'Failed to get user info', details: userInfo }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
   // Check if user exists in DB, if not create with registration bonus
   if (db.DB) {
