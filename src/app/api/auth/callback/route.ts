@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
       if (existingUser) {
         await updateLastLogin(db, userInfo.email);
       } else {
-        await createUser(db, userInfo.email, userInfo.name || 'User');
+        await createUser(db, crypto.randomUUID(), userInfo.email, userInfo.name || 'User', userInfo.picture || null);
       }
     }
 
