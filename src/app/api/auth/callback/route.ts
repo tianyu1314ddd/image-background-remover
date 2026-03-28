@@ -5,14 +5,15 @@ import type { D1Database } from '@cloudflare/workers-types';
 export const runtime = 'edge';
 
 export async function GET(request: NextRequest) {
-  const env = process.env as { DB?: D1Database } & { [key: string]: unknown };
-  const db = env as { DB?: D1Database } & { [key: string]: unknown };
-  
-  const url = new URL(request.url);
-  
-  // If no code, redirect to login
-  const code = url.searchParams.get('code');
-  if (!code) {
+  try {
+    const env = process.env as { DB?: D1Database } & { [key: string]: unknown };
+    const db = env as { DB?: D1Database } & { [key: string]: unknown };
+    
+    const url = new URL(request.url);
+    
+    // If no code, redirect to login
+    const code = url.searchParams.get('code');
+    if (!code) {
     const clientId = '404300094669-raplltqofch4kq0bco3hokten7plh0to.apps.googleusercontent.com';
     const redirectUri = encodeURIComponent(`${new URL(request.url).origin}/api/auth/callback`);
     return Response.redirect(
@@ -107,4 +108,14 @@ export async function GET(request: NextRequest) {
   redirectUrl.searchParams.set('email', userInfo.email);
 
   return Response.redirect(redirectUrl.toString(), 302);
+  } catch (error) {
+    return new Response(JSON.stringify({ 
+      error: 'Internal server error', 
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 }
