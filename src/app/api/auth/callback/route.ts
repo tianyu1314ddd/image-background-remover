@@ -105,6 +105,7 @@ export async function GET(request: NextRequest) {
     const redirectUrl = new URL(url.origin);
     redirectUrl.searchParams.set('token', sessionToken);
     redirectUrl.searchParams.set('name', userInfo.name || 'User');
+    redirectUrl.searchParams.set('email', userInfo.email);
     return NextResponse.redirect(redirectUrl.toString(), 302);
 
   } catch (error) {
