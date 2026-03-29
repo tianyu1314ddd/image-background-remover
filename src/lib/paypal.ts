@@ -100,6 +100,9 @@ export async function createOrder(
           custom_id: customId,
         },
       ],
+      application_context: {
+        shipping_preference: 'NO_SHIPPING',
+      },
     }),
   });
 

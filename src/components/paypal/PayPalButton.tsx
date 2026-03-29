@@ -109,6 +109,9 @@ export default function PayPalButton({
                     },
                   },
                 ],
+                application_context: {
+                  shipping_preference: 'NO_SHIPPING',
+                },
               });
             },
             onApprove: async (_data: { orderID: string }, actions: { order: { capture: () => Promise<Record<string, unknown>> } }) => {
