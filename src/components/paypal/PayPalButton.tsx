@@ -103,7 +103,8 @@ export default function PayPalButton({
               label: 'pay',
             },
             createOrder: (_data: unknown, actions: { order: { create: (config: Record<string, unknown>) => Promise<string> } }) => {
-              return actions.order.create({
+              const orderConfig = {
+                intent: 'CAPTURE',
                 purchase_units: [
                   {
                     description: `${packageName} - ${credits} Credits`,
@@ -113,14 +114,18 @@ export default function PayPalButton({
                     },
                   },
                 ],
-                application_context: {
-                  shipping_preference: 'NO_SHIPPING',
-                },
+              };
+              console.log('[PayPal] createOrder called with:', JSON.stringify(orderConfig));
+              return actions.order.create(orderConfig).catch((err: unknown) => {
+                console.error('[PayPal] createOrder error:', err);
+                throw err;
               });
             },
             onApprove: async (_data: { orderID: string }, actions: { order: { capture: () => Promise<Record<string, unknown>> } }) => {
+              console.log('[PayPal] onApprove, orderID:', _data.orderID);
               try {
                 const result = await actions.order.capture();
+                console.log('[PayPal] capture result:', JSON.stringify(result));
                 const purchaseUnits = result.purchase_units as Array<{ payments?: { captures?: Array<{ id: string }> } }>;
                 const transactionId = purchaseUnits?.[0]?.payments?.captures?.[0]?.id || '';
                 onSuccess?.(transactionId);
@@ -129,11 +134,12 @@ export default function PayPalButton({
               }
             },
             onCancel: () => {
+              console.log('[PayPal] onCancel');
               onCancel?.();
             },
             onError: (err: unknown) => {
-              console.error('PayPal error:', err);
-              onError?.('Payment failed');
+              console.error('[PayPal] onError:', JSON.stringify(err));
+              onError?.(String(err));
             },
           })
           .render(`#${containerId}`);
