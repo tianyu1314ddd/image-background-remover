@@ -61,7 +61,11 @@ export default function PayPalButton({
     setStatus('loading');
 
     const script = document.createElement('script');
-    script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD&intent=capture`;
+    const mode = process.env.NEXT_PUBLIC_PAYPAL_MODE || 'sandbox';
+    const baseUrl = mode === 'sandbox'
+      ? 'https://www.sandbox.paypal.com/sdk/js'
+      : 'https://www.paypal.com/sdk/js';
+    script.src = `${baseUrl}?client-id=${clientId}&currency=USD&intent=capture`;
     script.async = true;
     script.onload = () => {
       setStatus('ready');

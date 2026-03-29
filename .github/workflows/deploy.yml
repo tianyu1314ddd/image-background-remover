@@ -36,6 +36,7 @@ jobs:
       - name: Create env file
         run: |
           echo "NEXT_PUBLIC_PAYPAL_CLIENT_ID=${{ secrets.NEXT_PUBLIC_PAYPAL_CLIENT_ID }}" > .env.production
+          echo "NEXT_PUBLIC_PAYPAL_MODE=${{ secrets.PAYPAL_MODE }}" >> .env.production
           echo "PAYPAL_CLIENT_SECRET=${{ secrets.PAYPAL_CLIENT_SECRET }}" >> .env.production
           echo "PAYPAL_MODE=${{ secrets.PAYPAL_MODE }}" >> .env.production
           echo "CNY_TO_USD_RATE=${{ secrets.CNY_TO_USD_RATE }}" >> .env.production
@@ -50,6 +51,7 @@ jobs:
         run: pnpm build
         env:
           NEXT_PUBLIC_PAYPAL_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_PAYPAL_CLIENT_ID }}
+          NEXT_PUBLIC_PAYPAL_MODE: ${{ secrets.PAYPAL_MODE }}
           PAYPAL_CLIENT_SECRET: ${{ secrets.PAYPAL_CLIENT_SECRET }}
           PAYPAL_MODE: ${{ secrets.PAYPAL_MODE }}
           CNY_TO_USD_RATE: ${{ secrets.CNY_TO_USD_RATE }}
