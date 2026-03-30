@@ -352,7 +352,8 @@ export default function PricingPage() {
                 )}
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">{tier.name}</h3>
                 <div className="mb-4">
-                  <span className="text-4xl font-bold text-gray-900">{tier.price}</span>
+                  <span className="text-4xl font-bold text-gray-900">${(tier.priceCNY * 0.14).toFixed(2)}</span>
+                  <span className="text-gray-500 text-sm ml-1">≈ ¥{tier.priceCNY}</span>
                 </div>
                 {tier.credits && (
                   <div className="bg-green-50 text-green-700 px-3 py-1 rounded-lg text-sm mb-4 inline-block">
@@ -401,7 +402,8 @@ export default function PricingPage() {
                 )}
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">{tier.name}</h3>
                 <div className="mb-4">
-                  <span className="text-4xl font-bold text-gray-900">{tier.price}</span>
+                  <span className="text-4xl font-bold text-gray-900">${(tier.priceCNY * 0.14).toFixed(2)}</span>
+                  <span className="text-gray-500 text-sm ml-1">≈ ¥{tier.priceCNY}</span>
                 </div>
                 {tier.monthlyQuota && (
                   <div className="bg-purple-50 text-purple-700 px-3 py-1 rounded-lg text-sm mb-4 inline-block">
