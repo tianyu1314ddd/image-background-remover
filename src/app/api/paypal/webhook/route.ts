@@ -97,10 +97,16 @@ export async function POST(request: NextRequest) {
     const eventType = payload.event_type;
 
     console.log('PayPal Webhook received:', eventType, payload.id);
+    console.log('Webhook payload custom_id:', payload.resource?.custom_id);
 
     // Get database
     const env = process.env as { DB?: D1Database } & { [key: string]: unknown };
     const db = env.DB;
+
+    if (!db) {
+      console.error('Database not available in Edge Runtime');
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
 
     // Handle different event types
     switch (eventType) {
