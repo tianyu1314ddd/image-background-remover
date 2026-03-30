@@ -96,6 +96,9 @@ export default function PayPalButton({
           return;
         }
 
+        // Store customId in closure so we can use it in onApprove
+        let storedCustomId = '';
+        
         paypalWindow
           .Buttons({
             style: {
@@ -108,7 +111,7 @@ export default function PayPalButton({
               // Build custom_id: email-packageType-timestamp
               // This is critical for webhook to identify the user and package
               const timestamp = Date.now();
-              const customId = userEmail 
+              storedCustomId = userEmail 
                 ? `${userEmail}-${packageType}-${timestamp}`
                 : `unknown-${packageType}-${timestamp}`;
               
@@ -121,7 +124,7 @@ export default function PayPalButton({
                       currency_code: 'USD',
                       value: amountUSD.toFixed(2),
                     },
-                    custom_id: customId, // Critical: links payment to user
+                    custom_id: storedCustomId, // Critical: links payment to user
                   },
                 ],
               };
@@ -138,6 +141,33 @@ export default function PayPalButton({
                 console.log('[PayPal] capture result:', JSON.stringify(result));
                 const purchaseUnits = result.purchase_units as Array<{ payments?: { captures?: Array<{ id: string }> } }>;
                 const transactionId = purchaseUnits?.[0]?.payments?.captures?.[0]?.id || '';
+                
+                // Call add-credits API directly as backup (in case webhook fails)
+                if (storedCustomId && userEmail) {
+                  try {
+                    const addCreditsResponse = await fetch('/api/paypal/add-credits', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        orderId: _data.orderID,
+                        customId: storedCustomId,
+                        transactionId: transactionId,
+                        amount: amountUSD,
+                      }),
+                    });
+                    const addCreditsResult = await addCreditsResponse.json();
+                    console.log('[PayPal] add-credits API result:', addCreditsResult);
+                    
+                    if (addCreditsResult.success) {
+                      console.log('[PayPal] Credits added successfully via direct API');
+                    } else {
+                      console.log('[PayPal] add-credits API returned error:', addCreditsResult.error);
+                    }
+                  } catch (apiError) {
+                    console.error('[PayPal] Failed to call add-credits API:', apiError);
+                  }
+                }
+                
                 onSuccess?.(transactionId);
               } catch {
                 onError?.('Payment capture failed');
