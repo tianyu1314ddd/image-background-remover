@@ -3,13 +3,20 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import type { D1Database } from '@cloudflare/workers-types';
-import { CREDIT_PACKAGES } from '@/lib/paypal';
 
 export const runtime = 'edge';
 
+// Package info - inline to avoid import issues
+const PACKAGE_CREDITS: Record<string, number> = {
+  'S': 10,
+  'M': 50,
+  'L': 120,
+};
+
 export async function POST(request: NextRequest) {
   try {
-    const { orderId, customId, transactionId, amount } = await request.json();
+    const body = await request.json();
+    const { orderId, customId, transactionId, amount } = body;
 
     if (!customId && !orderId) {
       return NextResponse.json(
@@ -65,16 +72,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const packageInfo = CREDIT_PACKAGES[packageType as keyof typeof CREDIT_PACKAGES];
+    const credits = PACKAGE_CREDITS[packageType];
 
-    if (!packageInfo) {
+    if (!credits) {
       return NextResponse.json(
         { success: false, error: 'Unknown package type' },
         { status: 400 }
       );
     }
-
-    const credits = packageInfo.credits;
 
     // Check if user exists
     const user = await db
@@ -99,8 +104,7 @@ export async function POST(request: NextRequest) {
 
     // Record transaction
     try {
-      // Get package name from CREDIT_PACKAGES
-      const packageName = CREDIT_PACKAGES[packageType as keyof typeof CREDIT_PACKAGES]?.name || packageType;
+      const packageName = `积分包 ${packageType}`;
       
       await db
         .prepare(`
