@@ -26,7 +26,7 @@ interface WebhookPayload {
 }
 
 // Add credits to user account
-async function addCreditsToUser(db: D1Database, email: string, credits: number, transactionId: string) {
+async function addCreditsToUser(db: D1Database, email: string, credits: number, transactionId: string, packageType: string) {
   try {
     // Check if user exists
     const user = await db
@@ -48,12 +48,14 @@ async function addCreditsToUser(db: D1Database, email: string, credits: number, 
 
     // Record transaction
     try {
+      const packageName = CREDIT_PACKAGES[packageType as keyof typeof CREDIT_PACKAGES]?.name || 'credit_package';
+      
       await db
         .prepare(`
-          INSERT INTO paypal_transactions (transaction_id, user_email, package_type, credits, amount_cny, amount_usd, status, completed_at)
-          VALUES (?, ?, ?, ?, ?, ?, 'completed', CURRENT_TIMESTAMP)
+          INSERT INTO paypal_transactions (transaction_id, user_email, package_type, package_name, credits, amount_cny, amount_usd, status, completed_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, 'completed', CURRENT_TIMESTAMP)
         `)
-        .bind(transactionId, email, 'credit_package', credits, 0, 0)
+        .bind(transactionId, email, packageType, packageName, credits, 0, 0)
         .run();
     } catch (e) {
       // Transaction table might not exist yet, log but don't fail
@@ -138,7 +140,7 @@ export async function POST(request: NextRequest) {
         const credits = CREDIT_PACKAGES[packageType as keyof typeof CREDIT_PACKAGES]?.credits || 0;
         
         if (db && userEmail) {
-          await addCreditsToUser(db, userEmail, credits, transactionId);
+          await addCreditsToUser(db, userEmail, credits, transactionId, packageType);
         } else {
           console.log('DB not available or no email, logging transaction:', { customId, transactionId, credits });
         }

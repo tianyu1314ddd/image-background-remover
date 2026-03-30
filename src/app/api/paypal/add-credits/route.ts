@@ -99,15 +99,19 @@ export async function POST(request: NextRequest) {
 
     // Record transaction
     try {
+      // Get package name from CREDIT_PACKAGES
+      const packageName = CREDIT_PACKAGES[packageType as keyof typeof CREDIT_PACKAGES]?.name || packageType;
+      
       await db
         .prepare(`
-          INSERT INTO paypal_transactions (transaction_id, user_email, package_type, credits, amount_cny, amount_usd, status, completed_at)
-          VALUES (?, ?, ?, ?, ?, ?, 'completed', CURRENT_TIMESTAMP)
+          INSERT INTO paypal_transactions (transaction_id, user_email, package_type, package_name, credits, amount_cny, amount_usd, status, completed_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, 'completed', CURRENT_TIMESTAMP)
         `)
-        .bind(transactionId || orderId, userEmail, packageType, credits, amount || 0, amount || 0)
+        .bind(transactionId || orderId, userEmail, packageType, packageName, credits, amount || 0, amount || 0)
         .run();
+      console.log(`Transaction recorded for ${userEmail}: ${credits} credits`);
     } catch (e) {
-      console.log('Could not record transaction:', e);
+      console.log('Could not record transaction (non-fatal):', e);
     }
 
     return NextResponse.json({

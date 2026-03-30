@@ -143,8 +143,16 @@ export default function PayPalButton({
                 const transactionId = purchaseUnits?.[0]?.payments?.captures?.[0]?.id || '';
                 
                 // Call add-credits API directly as backup (in case webhook fails)
+                console.log('[PayPal] Checking conditions for add-credits:', { 
+                  hasStoredCustomId: !!storedCustomId, 
+                  hasUserEmail: !!userEmail,
+                  storedCustomId,
+                  userEmail 
+                });
+                
                 if (storedCustomId && userEmail) {
                   try {
+                    console.log('[PayPal] Calling add-credits API...');
                     const addCreditsResponse = await fetch('/api/paypal/add-credits', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
@@ -166,6 +174,8 @@ export default function PayPalButton({
                   } catch (apiError) {
                     console.error('[PayPal] Failed to call add-credits API:', apiError);
                   }
+                } else {
+                  console.log('[PayPal] Skipping add-credits API call - missing userEmail or storedCustomId');
                 }
                 
                 onSuccess?.(transactionId);
