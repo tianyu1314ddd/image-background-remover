@@ -480,6 +480,37 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Pricing CTA */}
+      <section className="max-w-6xl mx-auto px-4 pb-16">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl shadow-xl p-8 md:p-12 text-white text-center">
+          <h2 className="text-2xl md:text-3xl font-bold mb-4">需要更多额度？</h2>
+          <p className="text-blue-100 mb-6 max-w-xl mx-auto">
+            购买积分包享受更多处理次数，积分永久有效。<br/>
+            月度免费额度用完？购买积分继续使用！
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button
+              onClick={() => window.location.href = '/pricing'}
+              className="px-8 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+            >
+              <span>💎</span>
+              查看定价方案
+            </button>
+            <button
+              onClick={() => window.location.href = '/faq'}
+              className="px-8 py-3 bg-white/20 text-white rounded-lg font-semibold hover:bg-white/30 transition-colors"
+            >
+              常见问题
+            </button>
+          </div>
+          <div className="mt-6 flex justify-center gap-6 text-sm text-blue-100">
+            <span>✓ 积分永久有效</span>
+            <span>✓ 支付安全</span>
+            <span>✓ 随时可用</span>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="border-t border-gray-200 bg-white">
         <div className="max-w-6xl mx-auto px-4 py-6 text-center text-gray-500 text-sm">

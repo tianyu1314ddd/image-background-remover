@@ -1,8 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import PayPalButton from '@/components/paypal/PayPalButton';
+
+interface User {
+  email: string;
+  name?: string;
+  token: string;
+}
 
 interface PricingTier {
   id: string;
@@ -128,11 +134,13 @@ const subscriptionTiers: PricingTier[] = [
 function PurchaseModal({ 
   tier, 
   onClose, 
-  onSuccess 
+  onSuccess,
+  userEmail 
 }: { 
   tier: PricingTier; 
   onClose: () => void; 
   onSuccess: (transactionId: string) => void;
+  userEmail?: string;
 }) {
   const [error, setError] = useState<string | null>(null);
 
@@ -162,9 +170,7 @@ function PurchaseModal({
         
         <div className="flex items-baseline gap-2 mb-4">
           <span className="text-3xl font-bold text-gray-900">¥{tier.priceCNY}</span>
-          <span className="text-gray-500 text-sm">
-            ≈ ${(tier.priceCNY * 0.14).toFixed(2)} USD
-          </span>
+          <span className="text-gray-500 text-sm">人民币</span>
         </div>
 
         {tier.credits && (
@@ -191,6 +197,7 @@ function PurchaseModal({
             packageType={tier.id}
             packageName={tier.name}
             credits={parseInt(tier.credits || tier.monthlyQuota || '0')}
+            userEmail={userEmail}
             onSuccess={handleSuccess}
             onError={handleError}
             onCancel={handleCancel}
@@ -243,6 +250,20 @@ export default function PricingPage() {
   const router = useRouter();
   const [selectedTier, setSelectedTier] = useState<PricingTier | null>(null);
   const [successData, setSuccessData] = useState<{transactionId: string; packageName: string} | null>(null);
+  const [userEmail, setUserEmail] = useState<string | undefined>();
+
+  // Load user from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('user');
+      if (stored) {
+        const user: User = JSON.parse(stored);
+        setUserEmail(user.email);
+      }
+    } catch (e) {
+      console.error('Failed to load user from localStorage:', e);
+    }
+  }, []);
 
   // Debug: Check PayPal configuration
   const paypalClientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
@@ -407,8 +428,8 @@ export default function PricingPage() {
         <div className="mt-12 text-center">
           <div className="bg-green-50 border border-green-200 rounded-xl p-6 max-w-2xl mx-auto">
             <p className="text-green-800 text-sm">
-              💳 支持 PayPal 支付（USD）<br/>
-              <span className="text-green-600">价格已按实时汇率转换</span>
+              💳 支持 PayPal 支付<br/>
+              <span className="text-green-600">价格以人民币结算，PayPal 会自动转换为当地货币</span>
             </p>
           </div>
         </div>
@@ -433,6 +454,7 @@ export default function PricingPage() {
           tier={selectedTier}
           onClose={() => setSelectedTier(null)}
           onSuccess={handleSuccess}
+          userEmail={userEmail}
         />
       )}
 

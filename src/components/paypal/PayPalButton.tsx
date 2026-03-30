@@ -16,6 +16,7 @@ interface PayPalButtonProps {
   packageType: string;
   packageName: string;
   credits: number;
+  userEmail?: string; // Required to identify user in webhook
   onSuccess?: (transactionId: string) => void;
   onError?: (error: string) => void;
   onCancel?: () => void;
@@ -27,6 +28,7 @@ export default function PayPalButton({
   packageType,
   packageName,
   credits,
+  userEmail,
   onSuccess,
   onError,
   onCancel,
@@ -103,6 +105,13 @@ export default function PayPalButton({
               label: 'pay',
             },
             createOrder: (_data: unknown, actions: { order: { create: (config: Record<string, unknown>) => Promise<string> } }) => {
+              // Build custom_id: email-packageType-timestamp
+              // This is critical for webhook to identify the user and package
+              const timestamp = Date.now();
+              const customId = userEmail 
+                ? `${userEmail}-${packageType}-${timestamp}`
+                : `unknown-${packageType}-${timestamp}`;
+              
               const orderConfig = {
                 intent: 'CAPTURE',
                 purchase_units: [
@@ -112,6 +121,7 @@ export default function PayPalButton({
                       currency_code: 'USD',
                       value: amountUSD.toFixed(2),
                     },
+                    custom_id: customId, // Critical: links payment to user
                   },
                 ],
               };
@@ -178,7 +188,7 @@ export default function PayPalButton({
     return (
       <div className="w-full">
         <div className="text-center mb-3 text-sm text-gray-500">
-          ¥{amount} ≈ ${amountUSD.toFixed(2)} USD
+          ¥{amount}（人民币）
         </div>
         <div className="h-[44px] flex items-center justify-center bg-gray-100 rounded-lg">
           <span className="text-gray-500 text-sm">加载 PayPal...</span>
@@ -190,7 +200,7 @@ export default function PayPalButton({
   return (
     <div className="w-full">
       <div className="text-center mb-3 text-sm text-gray-600">
-        ¥{amount} ≈ ${amountUSD.toFixed(2)} USD
+        ¥{amount}（人民币）
       </div>
       <div id={containerId} className="min-h-[44px]" />
     </div>

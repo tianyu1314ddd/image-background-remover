@@ -14,11 +14,23 @@ interface UserData {
   memberSince: string;
 }
 
+interface Transaction {
+  id: string;
+  packageType: string;
+  credits: number;
+  amountCNY: number;
+  amountUSD: number;
+  status: string;
+  completedAt: string;
+}
+
 export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [showTransactionHistory, setShowTransactionHistory] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
@@ -57,6 +69,28 @@ export default function ProfilePage() {
 
     fetchQuota();
   }, [token]);
+
+  const fetchTransactions = useCallback(async () => {
+    if (!token) return;
+    
+    try {
+      const response = await fetch(`/api/user/transactions?token=${token}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setTransactions(data.data.transactions || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch transactions:', error);
+    }
+  }, [token]);
+
+  const handleShowTransactionHistory = useCallback(() => {
+    if (!showTransactionHistory) {
+      fetchTransactions();
+    }
+    setShowTransactionHistory(!showTransactionHistory);
+  }, [showTransactionHistory, fetchTransactions]);
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem('user');
@@ -184,6 +218,83 @@ export default function ProfilePage() {
           </div>
         )}
 
+        {/* Transaction History */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-800">充值记录</h3>
+            <button
+              onClick={handleShowTransactionHistory}
+              className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              {showTransactionHistory ? '收起' : '查看全部'}
+            </button>
+          </div>
+          
+          {showTransactionHistory && (
+            <>
+              {transactions.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <span className="text-4xl mb-2 block">📭</span>
+                  <p>暂无充值记录</p>
+                  <p className="text-sm">购买积分后将显示在这里</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="text-left text-sm text-gray-500 border-b">
+                        <th className="pb-3 font-medium">时间</th>
+                        <th className="pb-3 font-medium">套餐</th>
+                        <th className="pb-3 font-medium text-right">积分</th>
+                        <th className="pb-3 font-medium text-right">金额</th>
+                        <th className="pb-3 font-medium text-right">状态</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {transactions.slice(0, 10).map((tx) => (
+                        <tr key={tx.id} className="border-b last:border-0">
+                          <td className="py-3 text-sm text-gray-600">
+                            {new Date(tx.completedAt).toLocaleDateString('zh-CN', {
+                              year: 'numeric',
+                              month: '2-digit',
+                              day: '2-digit',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </td>
+                          <td className="py-3 text-sm text-gray-800">
+                            {getPackageName(tx.packageType)}
+                          </td>
+                          <td className="py-3 text-sm text-green-600 text-right font-medium">
+                            +{tx.credits}
+                          </td>
+                          <td className="py-3 text-sm text-gray-600 text-right">
+                            {tx.amountCNY > 0 ? `¥${tx.amountCNY}` : `$${tx.amountUSD?.toFixed(2)}`}
+                          </td>
+                          <td className="py-3 text-right">
+                            <span className={`text-xs px-2 py-1 rounded-full ${
+                              tx.status === 'completed' 
+                                ? 'bg-green-100 text-green-700' 
+                                : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              {tx.status === 'completed' ? '已完成' : tx.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {transactions.length > 10 && (
+                    <p className="text-center text-sm text-gray-500 mt-4">
+                      还有 {transactions.length - 10} 条记录...
+                    </p>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
         {/* Quick Links */}
         <div className="bg-white rounded-2xl shadow-lg p-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">快捷链接</h3>
@@ -209,4 +320,18 @@ export default function ProfilePage() {
       </section>
     </main>
   );
+}
+
+// Helper function to get package display name
+function getPackageName(packageType: string): string {
+  const packageNames: Record<string, string> = {
+    'S': '积分包 S',
+    'M': '积分包 M',
+    'L': '积分包 L',
+    'starter_monthly': 'Starter 月付',
+    'pro_monthly': 'Pro 月付',
+    'pro_yearly': 'Pro 年付',
+    'credit_package': '积分充值',
+  };
+  return packageNames[packageType] || packageType;
 }
