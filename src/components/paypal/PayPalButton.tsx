@@ -188,7 +188,7 @@ export default function PayPalButton({
     return (
       <div className="w-full">
         <div className="text-center mb-3 text-sm text-gray-500">
-          ¥{amount}（人民币）
+          ${amountUSD.toFixed(2)} USD
         </div>
         <div className="h-[44px] flex items-center justify-center bg-gray-100 rounded-lg">
           <span className="text-gray-500 text-sm">加载 PayPal...</span>
@@ -200,7 +200,7 @@ export default function PayPalButton({
   return (
     <div className="w-full">
       <div className="text-center mb-3 text-sm text-gray-600">
-        ¥{amount}（人民币）
+        ${amountUSD.toFixed(2)} USD
       </div>
       <div id={containerId} className="min-h-[44px]" />
     </div>

@@ -169,8 +169,8 @@ function PurchaseModal({
         <h3 className="text-xl font-bold text-gray-900 mb-2">{tier.name}</h3>
         
         <div className="flex items-baseline gap-2 mb-4">
-          <span className="text-3xl font-bold text-gray-900">¥{tier.priceCNY}</span>
-          <span className="text-gray-500 text-sm">人民币</span>
+          <span className="text-3xl font-bold text-gray-900">${(tier.priceCNY * 0.14).toFixed(2)}</span>
+          <span className="text-gray-500 text-sm">≈ ¥{tier.priceCNY}</span>
         </div>
 
         {tier.credits && (
@@ -428,8 +428,8 @@ export default function PricingPage() {
         <div className="mt-12 text-center">
           <div className="bg-green-50 border border-green-200 rounded-xl p-6 max-w-2xl mx-auto">
             <p className="text-green-800 text-sm">
-              💳 支持 PayPal 支付<br/>
-              <span className="text-green-600">价格以人民币结算，PayPal 会自动转换为当地货币</span>
+              💳 支持 PayPal 支付（USD）<br/>
+              <span className="text-green-600">约 ¥{((1 / 0.14) * 1).toFixed(0)} 人民币</span>
             </p>
           </div>
         </div>
